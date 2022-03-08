@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en" xmlns="http://www.w3.org/1999/xhtml">
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta http-equiv="x-ua-compatible" content="ie=edge">
+    <meta name="robots" content="noindex, follow">
+    <meta name="googlebot" content="noindex, follow">
+    <style type="text/css">
+        *,
+        *::before,
+        *::after {
+            box-sizing: border-box;
+        }
+
+        html,
+        body {
+            height: 100%;
+        }
+
+        body {
+            margin: 0;
+            background: linear-gradient(45deg, #49a09d, #5f2c82);
+            font-family: sans-serif;
+            font-weight: 100;
+        }
+
+        .container {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+        }
+
+        table {
+            width: 900px;
+            border-collapse: collapse;
+            overflow: hidden;
+            box-shadow: 0 0 20px rgba(0,0,0,0.1);
+        }
+
+        td {
+            padding: 15px;
+            background-color: rgba(255,255,255,0.2);
+            color: #fff;
+        }
+
+        select {
+            border: none;
+            padding: 0 1em 0 0;
+            background-color: transparent;
+            margin: 0;
+            width: 240px;
+            height: 360px;
+        }
+
+            select option {
+                margin: 4px;
+                background-color: transparent;
+            }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <table>
+            <tr>
+                <td colspan="2">
+                    <form id="pptUploadForm" method="post" action="api/ppt" enctype="multipart/form-data">
+                        <fieldset>
+                            <legend>PPTX/PPSX file upload</legend>
+                            <p><label for="name">Choose file to upload</label>&nbsp;&nbsp;&nbsp;<input id="presentation" name="presentation" type="file"></p>
+                        </fieldset>
+                        <p><input type="submit" value="Submit"></p>
+                        <iframe id="upload_target" name="upload_target" src="" style="display:none"></iframe>
+                    </form>
+                </td>
+            </tr>
+            <tr>
+                <td>
+                    <select id="videoList" size="5" onchange="videoSelection()">
+                    </select>
+                </td>
+                <td>
+                    <video id="video" width="640" height="480" controls="controls" autoplay="autoplay">
+                        <source id="source" src="" type="video/mp4">
+                    </video>
+                </td>
+            </tr>
+            <tr>
+                <td colspan="2">
+                    <p id="info"></p>
+                </td>
+            </tr>
+        </table>
+    </div>
+    <script>
+        window.addEventListener("load", function (event) {
+            document.getElementById("pptUploadForm").onsubmit = function () {
+                document.getElementById("pptUploadForm").target = "upload_target";
+                document.getElementById("upload_target").onload = uploadDone;
+            }
+        });
+
+        var videos = [];
+
+        function uploadDone() {
+            var ret = '';
+            if (frames['upload_target'].document.getElementsByTagName("body")[0].firstChild.localName == 'pre') {
+                ret = frames['upload_target'].document.getElementsByTagName("body")[0].firstChild.innerHTML;
+            }
+            else {
+                ret = frames['upload_target'].document.getElementsByTagName("body")[0].innerHTML;
+            }
+            var data = JSON.parse(ret);
+            if (data) {
+                var select = document.getElementById('videoList');
+                for (var i in data) {
+                    var item = data[i];
+                    var opt = document.createElement('option');
+                    opt.value = i;
+                    opt.innerHTML = 'Slide: ' + item.slideId + '. Video: ' + item.videoId + '  (' + item.videoFileName + ')';
+                    select.appendChild(opt);
+                    videos[i] = item;
+                }
+            }
+        }
+
+        function videoSelection() {
+            var x = document.getElementById("videoList").value;
+            var item = videos[x];
+            document.getElementById("info").innerHTML = "You selected: " + item.videoFileName;
+            var video = document.getElementById('video');
+            var source = document.getElementById('source');
+            video.pause();
+            source.setAttribute('src', '/api/ppt?fileId=' + item.fileId + '&videoId=' + item.videoId);
+            video.load();
+            video.play();
+        }
+    </script>
+</body>
+</html>
